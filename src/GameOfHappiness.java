@@ -171,6 +171,7 @@ public class GameOfHappiness extends JFrame implements ActionListener {
 		private Dimension d_gameBoardSize = null;
         private ArrayList<Point> point = new ArrayList<Point>(0);
         private Integer[][] level;
+        private int cycle = 0;
         
         public GameBoard() {
             addComponentListener(this);
@@ -245,6 +246,16 @@ public class GameOfHappiness extends JFrame implements ActionListener {
         	return level[x][y];
         }
         
+        /**
+         * Adiciona o bonus no nível de felicidade de uma célula
+         * @param x
+         * @param y
+         * @param bonus
+         */
+        public void updateLevel(int x, int y, int bonus) {
+        	level[x][y]+=bonus;
+        }
+        
         public void setLevel(int x, int y, int happiness) {
         	level[x][y] = happiness;
         }
@@ -253,14 +264,29 @@ public class GameOfHappiness extends JFrame implements ActionListener {
          * Método responsável por realizar os cálculos para mudar do nível de felicidade de uma célula
          * @param x
          * @param y
-         * @param indicador
+         * @param indicador (nível, vizinhos e tempo)
          */
         public void updateLevel(int x, int y, Integer[] indicador) {
+        	int bonus = 0;
         	
-        	System.out.print(indicador[0]);
-        	System.out.print(indicador[1]);
-        	System.out.print(indicador[2]);
-        	System.out.print(" ");
+        	if (((indicador[0] >= 60 && indicador[0] <= 80) && (indicador[1] >= 4))) {
+        		bonus+=1;
+        		bonus+=indicador[2];
+        	}
+        	
+        	if (((indicador[0] < 60) && (indicador[1] < 4))) { 
+        		bonus-=1;
+        		bonus-=indicador[2];
+        	}
+        	
+        	if (((getLevel(x,y) < 50) && (indicador[1] >= 7))) { 
+        		bonus+=1;
+        		bonus+=indicador[2];
+        	}
+        	
+        	if (getLevel(x,y)+bonus <= 100 && bonus > 0) {updateLevel(x,y,bonus);}
+        	if (getLevel(x,y)+bonus > 100) {setLevel(x,y,85);}
+        	if (getLevel(x,y)+bonus < 0) {setLevel(x,y,15);}
         }
  
         /**
@@ -389,6 +415,8 @@ public class GameOfHappiness extends JFrame implements ActionListener {
          */
         @Override
         public void run() {
+        	if (cycle > 3) { cycle = 0;}
+        	cycle++;
         	Integer[] indicadores = new Integer[3];
             for (int i=1; i<level.length-1; i++) {
                 for (int j=1; j<level[0].length-1; j++) {
@@ -402,14 +430,14 @@ public class GameOfHappiness extends JFrame implements ActionListener {
                     if (getLevel(i+1,j) >= 50)   { neighbors++; }
                     if (getLevel(i+1,j+1) >= 50) { neighbors++; }
                     
-                    // Média da felicidade dos vizinhos
+                    // Média do nível de felicidade dos vizinhos
                     indicadores[0] = (getLevel(i-1,j-1)+getLevel(i-1,j)+getLevel(i-1,j+1)+getLevel(i,j-1)+getLevel(i,j+1)+getLevel(i+1,j-1)+getLevel(i+1,j)+getLevel(i+1,j+1))/8;
                     
                     // Quantidade de vizinhos felizes
                     indicadores[1] = neighbors;
                     
-                    // Quantidade de vizinhos tristes
-                    indicadores[2] = 8-neighbors;
+                    // Ciclo do tempo
+                    indicadores[2] = cycle;
                     
                     updateLevel(i,j,indicadores);
                 }
